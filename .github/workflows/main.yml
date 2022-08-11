@@ -1,0 +1,69 @@
+on:
+  push:
+    branches: [master]
+
+jobs:
+  # check-diff:
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     id-token: write
+
+  #   outputs:
+  #     modified: ${{ steps.check.outputs.modified }}
+
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 2
+
+  #     - id: check
+  #       name: Check if src/ is modified
+  #       shell: pwsh
+  #       run: |
+  #         $diff = git diff --name-only HEAD^ HEAD
+
+  #         $SourceDiff = $diff | Where-Object { $_ -match 'src/' }
+  #         $HasDiff = $SourceDiff.Length -gt 0
+
+  #         Write-Host "::set-output name=modified::$HasDiff"
+
+  build-and-deploy:
+    # needs: check-diff
+    # if: ${{ needs.check-diff.outputs.modified == 'True' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: "Setup Node.js environment"
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16.x
+        cache: npm
+        cache-dependency-path: package-lock.json
+
+    - name: "Install dependencies"
+      run: npm ci
+
+    - name: "Build"
+      run: npm run build
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v0
+      with:
+        credentials_json: ${{ secrets.GCP_SA_JSON }}
+
+    - name: "Deploy to Google Cloud Functions"
+      uses: google-github-actions/deploy-cloud-functions@v0
+      with:
+        name: hello-firestore-ts
+        runtime: nodejs16
+        entry_point: main
+        region: us-west1
+        source_dir: build
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        description: "Firestore"
