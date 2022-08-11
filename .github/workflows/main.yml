@@ -52,6 +52,12 @@ jobs:
     - name: "Build"
       run: npm run build
 
+    - name: "Copy package.json"
+      run: cp package.json build/package.json
+
+    - name: "Copy package-lock.json"
+      run: cp package-lock.json build/package-lock.json
+
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v0
       with:
