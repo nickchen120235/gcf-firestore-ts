@@ -63,6 +63,9 @@ jobs:
       with:
         credentials_json: ${{ secrets.GCP_SA_JSON }}
 
+    - name: "Setup Google Cloud SDK"
+      uses: google-github-actions/setup-gcloud@v0
+
     - name: "Deploy to Google Cloud Functions"
       uses: google-github-actions/deploy-cloud-functions@v0
       with:
@@ -73,3 +76,6 @@ jobs:
         source_dir: build
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         description: "Firestore"
+
+    - name: "Cleanup Build Artifacts"
+      run: gsutil -m rm -r gs://us.artifacts.${{ secrets.GCP_PROJECT_ID }}.appspot.com 
